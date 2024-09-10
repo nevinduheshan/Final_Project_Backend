@@ -83,6 +83,8 @@ def register():
         username = data['username']
         password = data['password']
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        phone = data['phone']
+        name = data['name']
 
         # Check if user already exists
         cur = mysql.connection.cursor()
@@ -93,7 +95,7 @@ def register():
             return jsonify({"message": "User already exists!"}), 400
         
         # Insert new user
-        cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
+        cur.execute("INSERT INTO users (username, password, phone, name) VALUES (%s, %s, %s, %s)", (username, hashed_password, phone, name))
         mysql.connection.commit()
         cur.close()
 
