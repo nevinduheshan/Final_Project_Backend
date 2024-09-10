@@ -93,6 +93,19 @@ def get_users():
 
     return jsonify(user_list), 200
 
+@app.route('/admin/users/<int:id>', methods=['DELETE'])
+def delete_user(id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM users WHERE id = %s", (id,))
+        mysql.connection.commit()
+        cur.close()
+
+        return jsonify({"message": "User deleted successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 @app.route('/dashboard')
 @login_required
