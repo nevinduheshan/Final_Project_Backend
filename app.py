@@ -63,6 +63,36 @@ def login():
     else:
         return jsonify({"message": "Invalid credentials"}), 401
 
+@app.route('/adminLogin', methods=['POST'])
+def admin_login():
+    username = request.json.get('username')
+    password = request.json.get('password')
+
+    # Check if username and password are correct
+    if username == 'admin' and password == '123':
+        login_user(User(id=0, username='admin'))  # Admin user with ID 0
+        return jsonify({"message": "Admin login successful", "username": "admin"}), 200
+    else:
+        return jsonify({"message": "Invalid admin credentials"}), 401
+
+@app.route('/admin/users', methods=['GET'])
+def get_users():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, username, phone, name FROM users")
+    users = cur.fetchall()
+    cur.close()
+
+    user_list = []
+    for user in users:
+        user_list.append({
+            'id': user[0],
+            'username': user[1],
+            'phone': user[2],
+            'name': user[3]
+        })
+
+    return jsonify(user_list), 200
+
 
 @app.route('/dashboard')
 @login_required
