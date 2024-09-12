@@ -176,6 +176,27 @@ def submit_contact():
         return jsonify({"error": "An error occurred while saving your message"}), 500
 
 
+@app.route('/admin/messages', methods=['GET'])
+def get_messages():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, first_name, last_name, email, phone_number, message FROM contacts")
+    messsages = cur.fetchall()
+    cur.close()
+
+    messsage_list = []
+    for messsage in messsages:
+        messsage_list.append({
+            'id': messsage[0],
+            'first_name': messsage[1],
+            'last_name': messsage[2],
+            'email': messsage[3],
+            'phone_number': messsage[4],
+            'message': messsage[5]
+        })
+
+    return jsonify(messsage_list), 200
+
+
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json
