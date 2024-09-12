@@ -145,6 +145,35 @@ def register():
         return jsonify({"message": "User registered successfully!"}), 201
 
 
+@app.route('/submit_contact', methods=['POST'])
+def submit_contact():
+    data = request.json
+
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    email = data.get('email')
+    phone_number = data.get('phone_number')
+    message = data.get('message')
+
+    # Validate the input (optional)
+    if not first_name or not email or not message:
+        return jsonify({"error": "Please fill in all required fields"}), 400
+
+    # Insert data into MySQL
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute(
+            "INSERT INTO contacts (first_name, last_name, email, phone_number, message) VALUES (%s, %s, %s, %s, %s)",
+            (first_name, last_name, email, phone_number, message)
+        )
+        mysql.connection.commit()
+        cur.close()
+
+        return jsonify({"success": "Contact form submitted successfully"}), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "An error occurred while saving your message"}), 500
 
 
 @app.route('/predict', methods=['POST'])
