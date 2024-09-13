@@ -63,6 +63,49 @@ def login():
     else:
         return jsonify({"message": "Invalid credentials"}), 401
 
+@app.route('/adminLogin', methods=['POST'])
+def admin_login():
+    username = request.json.get('username')
+    password = request.json.get('password')
+
+    # Check if username and password are correct
+    if username == 'admin' and password == '123':
+        login_user(User(id=0, username='admin'))  # Admin user with ID 0
+        return jsonify({"message": "Admin login successful", "username": "admin"}), 200
+    else:
+        return jsonify({"message": "Invalid admin credentials"}), 401
+
+@app.route('/admin/users', methods=['GET'])
+def get_users():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, username, phone, name FROM users")
+    users = cur.fetchall()
+    cur.close()
+
+    user_list = []
+    for user in users:
+        user_list.append({
+            'id': user[0],
+            'username': user[1],
+            'phone': user[2],
+            'name': user[3]
+        })
+
+    return jsonify(user_list), 200
+
+@app.route('/admin/users/<int:id>', methods=['DELETE'])
+def delete_user(id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM users WHERE id = %s", (id,))
+        mysql.connection.commit()
+        cur.close()
+
+        return jsonify({"message": "User deleted successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 @app.route('/dashboard')
 @login_required
@@ -83,6 +126,8 @@ def register():
         username = data['username']
         password = data['password']
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        phone = data['phone']
+        name = data['name']
 
         # Check if user already exists
         cur = mysql.connection.cursor()
@@ -93,13 +138,63 @@ def register():
             return jsonify({"message": "User already exists!"}), 400
         
         # Insert new user
-        cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
+        cur.execute("INSERT INTO users (username, password, phone, name) VALUES (%s, %s, %s, %s)", (username, hashed_password, phone, name))
         mysql.connection.commit()
         cur.close()
 
         return jsonify({"message": "User registered successfully!"}), 201
 
 
+@app.route('/submit_contact', methods=['POST'])
+def submit_contact():
+    data = request.json
+
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    email = data.get('email')
+    phone_number = data.get('phone_number')
+    message = data.get('message')
+
+    # Validate the input (optional)
+    if not first_name or not email or not message:
+        return jsonify({"error": "Please fill in all required fields"}), 400
+
+    # Insert data into MySQL
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute(
+            "INSERT INTO contacts (first_name, last_name, email, phone_number, message) VALUES (%s, %s, %s, %s, %s)",
+            (first_name, last_name, email, phone_number, message)
+        )
+        mysql.connection.commit()
+        cur.close()
+
+        return jsonify({"success": "Contact form submitted successfully"}), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "An error occurred while saving your message"}), 500
+
+
+@app.route('/admin/messages', methods=['GET'])
+def get_messages():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, first_name, last_name, email, phone_number, message FROM contacts")
+    messsages = cur.fetchall()
+    cur.close()
+
+    messsage_list = []
+    for messsage in messsages:
+        messsage_list.append({
+            'id': messsage[0],
+            'first_name': messsage[1],
+            'last_name': messsage[2],
+            'email': messsage[3],
+            'phone_number': messsage[4],
+            'message': messsage[5]
+        })
+
+    return jsonify(messsage_list), 200
 
 
 @app.route('/predict', methods=['POST'])
